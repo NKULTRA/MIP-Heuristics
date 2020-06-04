@@ -23,12 +23,6 @@ class Rounding(Model):
         return equal
 
     @staticmethod
-    def find_null(solution):
-        return np.unique(
-            [k for k in range(len(solution)) if (solution[k] > 0)]
-        )
-
-    @staticmethod
     def get_pos_slacks(current_slacks):
         return set(
             ind for ind in range(len(current_slacks)) if current_slacks[ind] > 0
@@ -123,33 +117,3 @@ class Rounding(Model):
             [k for k in range(len(row)) if row[k] != 0 and k != ind]
         )
         return np.intersect1d(pos_coeff, curr_not_null)
-
-    def is_there_slack(self, curr, curr_fraction, ind, const_index, cur_slacks, slack, curr_not_null):
-        variables = self.get_unbounded(const_index, ind, curr_not_null)
-        answer = False
-        if len(variables) > 0:
-            for var in variables:
-                column = self.get_col(var)
-                # hier muss ich noch im Model nur die Paare von equal NBs sammeln und prüfen
-                if len([column[k] for k in range(len(column)) if column[k] != 0]) == 1:
-                    coeff = self.get_coeff(const_index, var)
-                    if coeff > 0:
-                        slack[const_index] += coeff * (curr[var] - self.var_name[var].lb)
-                        if curr[var] % 1 != 0 and self.get_type(self.var_name[var]) != "C":
-                            # fraglich ob das immer zutrifft
-                            curr_fraction[var] = 0
-                        curr[var] -= (curr[var] - self.var_name[var].lb)
-                        # bei anderen problemen mag dies zutreffen
-                        if curr[var] % 1 != 0:
-                            print(curr[var])
-                    elif coeff < 0:
-                        # zudem muss ich die Equations mit == sammeln.. am Ende funktioniert diese funktion überhaupt nicht
-                        slack[const_index] += - coeff * (self.var_name[var].ub - curr[var])
-                        if curr[var] % 1 != 0 and self.get_type(self.var_name[var]) != "C":
-                            curr_fraction[var] = 0
-                        curr[var] += (self.var_name[var].ub - curr[var])
-                    if curr[var] == 0:
-                        np.delete(curr_not_null, var)
-                    cur_slacks.add(const_index)
-                    answer = True
-        return np.sum(curr_fraction), answer
