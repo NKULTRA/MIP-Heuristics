@@ -110,10 +110,3 @@ class Rounding(Model):
             self.update_curr(current, index, lower, "down")
             self.update_slacks(slack, index, lower, "down")
             return zi_lb, fraction_lb
-
-    def get_unbounded(self, const_index, ind, curr_not_null):
-        row = self.get_row(const_index)
-        pos_coeff = np.array(
-            [k for k in range(len(row)) if row[k] != 0 and k != ind]
-        )
-        return np.intersect1d(pos_coeff, curr_not_null)
