@@ -29,7 +29,6 @@ if __name__ == "__main__":
     start = datetime.now()
     while ZI > 0 and cnt < 3:
         curr_vars = m.fraction_index(current)
-        # current_not_null = find_null(current)
 
         if len(curr_vars) == 0 or len(curr_slacks) == 0:
             break
@@ -38,7 +37,7 @@ if __name__ == "__main__":
             col = m.get_col(index)
             col_index = m.get_col_index(index)
             lb, ub = 1, 1
-            new = False
+
             for element in col_index:
                 if element not in curr_slacks:
                     if col[element] < 0:
@@ -47,17 +46,8 @@ if __name__ == "__main__":
                         ub = 0
                     continue
                 lb, ub = m.get_lb_ub(lb, ub, col[element], slacks[element])
-                # bei gleichheitsproblemen haben wir jeweils zwei nebenbedingungen mit pos und neg Vorzeichen
-                # das zwingt auf 0
                 if lb == 0 and ub == 0:
-                    '''ZI, new = is_there_slack(current, current_fraction, index,
-                                             constraint_index, curr_slacks,
-                                             slacks, current_not_null)
-                    if not new:
-                        break'''
                     break
-            # if new:
-            # continue
             LB = min(lb, current[index] - m.var_name[index].lb)
             UB = min(ub, m.var_name[index].ub - current[index])
             if UB < epsilon and LB < epsilon:
