@@ -113,21 +113,15 @@ if __name__ == '__main__':
             cnt += 1
 
     end = datetime.now()
-    with open('C:/Users/Nik/Desktop/Testfiles/feasib_test_2min_T20_R100.csv', 'a', newline='') as file:
-        writer = csv.writer(file, delimiter=';')
-        if m.feasible(rounded):
-            print()
-            print("Iterations: ", cnt)
-            print("Time: ", end - start)
-            print()
-            print("MIP Startwert: " + str(sum(objective * rounded)))
-            writer.writerow([sys.argv[1].replace('C:/Users/Nik/Desktop/Testfiles/Benchmark\\', '').replace('.mps', ''),
-                             str(end - start), str(m.optimum(current)).replace('.', ','), str(cnt)])
-        else:
-            print()
-            print('no solution!')
-            print("Iterations: ", cnt)
-            print("Time: ", end - start)
-            writer.writerow([sys.argv[1].replace('C:/Users/Nik/Desktop/Testfiles/Benchmark\\', '').replace('.mps', ''),
-                             str(end - start), 'unsolvable'])
+    if m.feasible(rounded):
+        print()
+        print("Iterations: ", cnt)
+        print("Time: ", end - start)
+        print()
+        print("MIP Startwert: " + str(sum(objective * rounded)))
+    else:
+        print()
+        print('no solution!')
+        print("Iterations: ", cnt)
+        print("Time: ", end - start)
         print()
