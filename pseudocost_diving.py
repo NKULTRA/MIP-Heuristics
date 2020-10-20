@@ -232,25 +232,15 @@ if __name__ == '__main__':
 
     end = datetime.now()
 
-    with open('C:/Users/Nik/Desktop/Testfiles/pseudo_test_time2min.csv', 'a', newline='') as file:
-        writer = csv.writer(file, delimiter=';')
-        if solution:
-            print()
-            print("Iterations: ", cnt)
-            print("Time: ", end - start)
-            print()
-            print("MIP Startwert: " + str(m.optimum(current)))
-            writer.writerow(
-                [sys.argv[1].replace('C:/Users/Nik/Desktop/Testfiles/Benchmark\\', '').replace('.mps', ''),
-                 str(end - start), str(m.optimum(current)).replace('.', ','), str(cnt), str(simple_solution)]
-            )
-        else:
-            print()
-            print('no solution!')
-            print('Iterations: ', cnt)
-            print("Time: ", end - start)
-            writer.writerow(
-                [sys.argv[1].replace('C:/Users/Nik/Desktop/Testfiles/Benchmark\\', '').replace('.mps', ''),
-                 str(end - start), 'unsolvable']
-            )
+    if solution:
+        print()
+        print("Iterations: ", cnt)
+        print("Time: ", end - start)
+        print()
+        print("MIP Startwert: " + str(m.optimum(current)))
+    else:
+        print()
+        print('no solution!')
+        print('Iterations: ', cnt)
+        print("Time: ", end - start)
         print()
