@@ -2,6 +2,7 @@ from gurobipy import *
 import numpy as np
 
 
+# Ersatz für gurobi, Aufbereitung des Models
 class Model:
 
     def __init__(self, model):
@@ -38,13 +39,13 @@ class Model:
     def relaxation(self):
         self.model = self.original.relax()
         self.__canon()
+        # Unterdrückung von output durch gurobi
         self.model.setParam("OutputFlag", 0)
-        # bei manchen Problemen führt die duale Lösung zu einem besseren Ergebnis
-        self.model.setParam("Method", 1)
+        # dualer Simplex
+        # self.model.setParam("Method", 1)
         self.model.optimize()
         self.variables = self.model.getVars()
         self.constraints = self.model.getConstrs()
-        # hier evtl. auf einen Standard einigen
         self.var_index = {key: n for n, key in enumerate(self.variables)}
         self.var_name = {key: n for key, n in enumerate(self.variables)}
         self.constraint_index = {key: n for n, key in enumerate(self.constraints)}
@@ -52,17 +53,23 @@ class Model:
         self.matrix = np.array(self.model.getA().A)
 
     def normalize(self):
-        self.model = self.original
+        self.model = self.original.copy()
         self.__canon()
+        self.model.update()
         self.model.setParam("OutputFlag", 0)
         self.variables = self.model.getVars()
         self.constraints = self.model.getConstrs()
-        # hier evtl. auf einen Standard einigen
         self.var_index = {key: n for n, key in enumerate(self.variables)}
         self.var_name = {key: n for key, n in enumerate(self.variables)}
         self.constraint_index = {key: n for n, key in enumerate(self.constraints)}
         self.constraint_name = {key: n for key, n in enumerate(self.constraints)}
         self.matrix = np.array(self.model.getA().A)
+
+    def set_objective(self, linear):
+        self.model.setObjective(linear, GRB.MINIMIZE)
+
+    def get_expr(self, const, coeffs):
+        return LinExpr(const) + LinExpr(coeffs, self.variables)
 
     def objective(self):
         return np.array(
@@ -91,7 +98,7 @@ class Model:
 
     def feasible(self, solution):
         return all(
-            np.dot(self.matrix, solution) <= self.right_hand_side()
+            np.matmul(self.matrix, solution) <= self.right_hand_side()
         )
 
     def get_type(self, variable):
@@ -111,4 +118,3 @@ class Model:
 
     def get_coeff(self, constraint, variable):
         return self.matrix[constraint][variable]
-
