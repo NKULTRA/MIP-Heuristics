@@ -1,76 +1,128 @@
-from pumping import Pumping
-from datetime import datetime
-from gurobipy import *
+from model import Model
 import numpy as np
-import os
+import random as rd
+from datetime import datetime, timedelta
+import sys
+import csv
 
-__location__ = os.path.realpath(
-    os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
-if __name__ == "__main__":
+# Störfunktion flip
+def flip(current_sol, rounded_sol):
+    # randint ist das intervall der Anzahl an veränderten Variablen
+    flip_index = error(current_sol, rounded_sol, rd.randint(10, 30))
+    for i in flip_index:
+        if m.get_type(m.var_name[i]) == 'C':
+            continue
+        if rounded_sol[i] == 0:
+            rounded_sol[i] = 1
+        elif rounded_sol[i] == 1:
+            rounded_sol[i] = 0
 
-    m = Pumping(os.path.join(__location__, 'fast0507.mps'))
+
+# Störfunktion perturbation
+def perturb(current_sol, rounded_sol):
+    for i in range(len(rounded_sol)):
+        if m.get_type(m.var_name[i]) == 'C':
+            continue
+        if abs(current_sol[i] - rounded_sol[i]) + max(rd.random() - 0.3, 0) > 0.5:
+            if rounded_sol[i] == 0:
+                rounded_sol[i] = 1
+            elif rounded_sol[i] == 1:
+                rounded_sol[i] = 0
+
+
+# Differenz zwischen gerundeter und ungerundeter Lösung absteigend sortiert, Anzahl von T höchsten Werten
+def error(current_sol, rounded_sol, number):
+    return np.argsort(abs(current_sol - rounded_sol))[-number:]
+
+
+if __name__ == '__main__':
+    m = Model(sys.argv[1])
+    m.relaxation()
 
     current = m.current_solution()
-    rounded_solution = np.around(current)
+
+    integer = np.array(
+        [k for k in range(len(current)) if m.get_type(m.var_name[k]) != "C"]
+    )
+
+    rounded = np.array(
+        [round(current[k]) if m.get_type(m.var_name[k]) != "C" else current[k] for k in range(len(current))]
+    )
+
+    rounded_orig = rounded.copy()
+
     objective = m.objective()
+    coefficients = [0 for _ in range(len(rounded))]
+    const = 0
 
-    #obj = m.model.getObjective()
-    #first_value = obj.getValue()
-
+    timelimit = 2
     cnt = 0
-    limit = 10000
 
     start = datetime.now()
-    if not m.feasible(rounded_solution):
-        already = list()
+    # Start Heuristik
+    if not m.feasible(rounded):
+        expr = [0 for _ in range(len(rounded))]
+        already = dict()
+        while not m.feasible(rounded) and cnt < 100:
+            # Erstellung der Distanzfunktion
+            for index in integer:
+                # ab dem zweiten Durchgang, sollte sich ein geänderter Index bei einer 1 befinden, dann
+                # muss die Konstante verkleinert werden
+                if coefficients[index] == -1:
+                    const -= 1
+                if rounded[index] == 0:
+                    coefficients[index] = 1
+                else:
+                    const += 1
+                    coefficients[index] = -1
 
-        while not m.feasible(rounded_solution) and cnt < limit:
-            it_is = False
-            expr = LinExpr()
-
-            for i, val in m.var_name.items():
-                if m.get_type(val) == "C":
-                    continue
-                if rounded_solution[i] == 0:
-                    expr += val
-                elif rounded_solution[i] == 1:
-                    expr += (1 - val)
-
-            m.model.setObjective(expr, GRB.MINIMIZE)
+            expr = m.get_expr(const, coefficients)
+            m.set_objective(expr)
             m.model.optimize()
 
+            last_rounded = np.copy(rounded)
             current = m.current_solution()
 
-            rounded_solution = np.array(
-                [round(current[i]) if m.get_type(m.var_name[i]) != "C" else current[i] for i in range(len(current))]
+            rounded = np.array(
+                [round(current[k]) if m.get_type(m.var_name[k]) != "C" else current[k] for k in range(len(current))]
             )
 
-            new_objective = m.objective()
+            if m.feasible(rounded):
+                break
 
-            for element in already:
-                if np.array_equal(rounded_solution, element):
-                    it_is = True
-                    break
+            if np.all(last_rounded[integer] == rounded[integer]):
+                flip(current, rounded)
 
-            if it_is:
-                m.perturb(current, rounded_solution)
+            if id(rounded) in already and (len(already) >= 3 or cnt >= 100):
+                perturb(current, rounded)
+                already = dict()
+                already[id(rounded)] = None
             else:
-                already.append(rounded_solution)
+                already[id(rounded)] = None
 
-            # + m.model.getAttr("IterCount")
+            if len(already) > 3:
+                already.pop(list(already.keys())[0])
+
+            if m.feasible(rounded):
+                break
+
+            if datetime.now() - start > timedelta(minutes=timelimit):
+                break
+
             cnt += 1
 
-            if m.feasible(rounded_solution):
-                break
     end = datetime.now()
+    if m.feasible(rounded):
+        print()
+        print("Iterations: ", cnt)
+        print("Time: ", end - start)
+        print()
+        print("MIP Startwert: " + str(sum(objective * rounded)))
 
-    print()
-    print("Iterations: ", cnt)
-    print("Time: ", end - start)
-    print()
-    if cnt == limit:
-        print("no solution found")
     else:
-        print("MIP-Startwert: ", np.sum(objective * rounded_solution))
-        print(m.feasible(rounded_solution))
+        print()
+        print('no solution!')
+        print("Iterations: ", cnt)
+        print("Time: ", end - start)
+
