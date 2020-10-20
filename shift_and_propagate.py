@@ -296,33 +296,15 @@ if __name__ == '__main__':
     print()
     print('Time: ', end - start)
 
-    with open('C:/Users/Nik/Desktop/Testfiles/shiftandprop_test.csv', 'a', newline='') as file:
-        writer = csv.writer(file, delimiter=';')
-        if all(right >= 0):
-            if len(continuous) > 0:
-                m.model.optimize()
-                if m.model.getAttr('Status') != 2:
-                    print('no solution')
-                    writer.writerow(
-                        [sys.argv[1].replace('C:/Users/Nik/Desktop/Testfiles/Benchmark\\', '').replace('.mps', ''),
-                         str(end - start), 'unsolvable', len(cutoffs)]
-                    )
-                else:
-                    print('Solution: ', m.optimum(m.current_solution()))
-                    writer.writerow(
-                        [sys.argv[1].replace('C:/Users/Nik/Desktop/Testfiles/Benchmark\\', '').replace('.mps', ''),
-                         str(end - start), str(m.optimum(m.current_solution())).replace('.', ','), all(right >= 0)]
-                    )
+    if all(right >= 0):
+        if len(continuous) > 0:
+            m.model.optimize()
+            if m.model.getAttr('Status') != 2:
+                print('no solution')
             else:
-                print('Solution: ', m.optimum(current))
-                writer.writerow(
-                    [sys.argv[1].replace('C:/Users/Nik/Desktop/Testfiles/Benchmark\\', '').replace('.mps', ''),
-                     str(end - start), str(m.optimum(current)).replace('.', ','), all(right >= 0)]
-                )
+                print('Solution: ', m.optimum(m.current_solution()))
         else:
-            print('no solution')
-            writer.writerow(
-                [sys.argv[1].replace('C:/Users/Nik/Desktop/Testfiles/Benchmark\\', '').replace('.mps', ''),
-                 str(end - start), 'unsolvable', len(cutoffs)]
-            )
+            print('Solution: ', m.optimum(current))
+    else:
+        print('no solution')
         print()
