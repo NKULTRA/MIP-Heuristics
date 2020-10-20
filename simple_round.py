@@ -1,23 +1,29 @@
-from rounding import Rounding
+from model import Model
+import numpy as np
+from math import floor, ceil
 from datetime import datetime
-from math import ceil, floor
-import os
+import sys
+import csv
 
 
-__location__ = os.path.realpath(
-    os.path.join(os.getcwd(), os.path.dirname(__file__)))
+# Menge der gebrochenen Variablen
+def fraction_index(solution):
+    return np.array(
+        [i for i in range(len(solution)) if (solution[i] != round(solution[i]) and m.get_type(m.var_name[i]) != "C")]
+    )
 
-if __name__ == "__main__":
 
-    m = Rounding(os.path.join(__location__, 'fast0507.mps'))
+if __name__ == '__main__':
+    m = Model(sys.argv[1])
+    m.relaxation()
 
     current = m.current_solution()
-    indices = m.fraction_index(current)
+    indices = fraction_index(current)
 
-    #equals = m.get_equal()
     solved = True
 
     start = datetime.now()
+    # Start der Heuristik
     for var in indices:
 
         col = m.get_col(var)
@@ -35,8 +41,14 @@ if __name__ == "__main__":
 
     print()
     print("Time: ", end - start)
-    print()
-    if solved:
-        print("MIP Startwert: " + str(m.optimum(current)))
-    else:
-        print("unsolvable")
+    with open('C:/Users/Nik/Desktop/Testfiles/simple.csv', 'a', newline='') as file:
+        writer = csv.writer(file, delimiter=';')
+        if solved:
+            print("MIP Startwert: " + str(m.optimum(current)))
+            writer.writerow([sys.argv[1].replace('C:/Users/Nik/Desktop/Testfiles/Benchmark\\', '').replace('.mps', ''),
+                             str(end - start), str(m.optimum(current)).replace('.', ',')])
+        else:
+            print("unsolvable")
+            writer.writerow([sys.argv[1].replace('C:/Users/Nik/Desktop/Testfiles/Benchmark\\', '').replace('.mps', ''),
+                             str(end - start), 'unsolvable'])
+        print()
