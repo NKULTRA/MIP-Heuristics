@@ -7,4 +7,7 @@ Master thesis - implement various MIP Heuristics, mostly non root from the LP-Re
 - shift and propagate
 - pseudocost diving
 
--> fast0507 is one example model to test the heuristics
+some of them were implemented just to solve BIPs, because this was the task
+model.py is the Model Class
+
+gurobi and numpy are necessary
