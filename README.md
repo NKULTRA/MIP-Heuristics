@@ -10,4 +10,4 @@ Master thesis - implement various MIP Heuristics, mostly non root from the LP-Re
 some of them were implemented just to solve BIPs, because this was the task
 model.py is the Model Class
 
-gurobi and numpy are necessary
+gurobi and numpy are necessary, model files were read in mps format
